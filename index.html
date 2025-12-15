@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contexto FR</title>
+
+<style>
+body {
+  background:#121212;
+  color:#fff;
+  font-family:system-ui;
+  margin:0;
+  padding:16px;
+}
+
+.app {
+  max-width:480px;
+  margin:auto;
+}
+
+h1 {
+  text-align:center;
+}
+
+input, button {
+  width:100%;
+  padding:12px;
+  font-size:16px;
+  border-radius:8px;
+  border:none;
+  margin-top:8px;
+}
+
+input {
+  background:#1e1e1e;
+  color:#fff;
+}
+
+button {
+  background:#4caf50;
+  color:#000;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+ul {
+  list-style:none;
+  padding:0;
+  margin-top:16px;
+}
+
+li {
+  background:#1e1e1e;
+  padding:10px;
+  border-radius:6px;
+  margin-bottom:8px;
+  display:flex;
+  justify-content:space-between;
+}
+.rank {
+  opacity:.7;
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <h1>Contexto 🇫🇷</h1>
+
+  <input id="guess" placeholder="Entrez un mot…" />
+  <button onclick="submitGuess()">Valider</button>
+
+  <ul id="results"></ul>
+</div>
+
+<script>
+// --- Base sémantique simplifiée ---
+const semanticGroups = {
+  emotions: ["amour","haine","joie","tristesse","peur","colère"],
+  nature: ["arbre","forêt","pluie","soleil","vent","mer"],
+  human: ["homme","femme","enfant","personne","gens"],
+  city: ["ville","route","immeuble","voiture","bruit"],
+  mind: ["pensée","idée","esprit","cerveau","mémoire"]
+};
+
+// Mot du jour (stable)
+const today = new Date().toISOString().slice(0,10);
+const secretWords = Object.values(semanticGroups).flat();
+const secret = secretWords[today.split("-").join("") % secretWords.length];
+
+let guesses = [];
+
+function getGroup(word) {
+  for (let group in semanticGroups) {
+    if (semanticGroups[group].includes(word)) {
+      return group;
+    }
+  }
+  return null;
+}
+
+function similarity(word) {
+  if (word === secret) return 1000;
+
+  const g1 = getGroup(word);
+  const g2 = getGroup(secret);
+
+  if (!g1 || !g2) return Math.floor(Math.random() * 200) + 1;
+  if (g1 === g2) return Math.floor(Math.random() * 300) + 700;
+
+  return Math.floor(Math.random() * 400) + 200;
+}
+
+function submitGuess() {
+  const input = document.getElementById("guess");
+  const word = input.value.toLowerCase().trim();
+  if (!word) return;
+
+  const score = similarity(word);
+  guesses.push({ word, score });
+  guesses.sort((a,b) => b.score - a.score);
+
+  render();
+  input.value = "";
+}
+
+function render() {
+  const ul = document.getElementById("results");
+  ul.innerHTML = "";
+
+  guesses.forEach((g, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span>${g.word}</span>
+      <span class="rank">#${i+1} • ${g.score}</span>
+    `;
+    ul.appendChild(li);
+  });
+}
+</script>
+</body>
+</html>
