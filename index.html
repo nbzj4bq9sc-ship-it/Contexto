@@ -30,8 +30,8 @@ h1 {
 input {
   background:#1e1e1e;
   color:#fff;
-  width:80%;       /* largeur réduite */
-  margin:auto;     /* centré */
+  width:80%;
+  margin:auto;
   display:block;
   padding:14px;
   font-size:16px;
@@ -40,12 +40,12 @@ input {
 }
 
 button {
-  background:#f5f5f0; /* Valider → blanc/crème neutre */
+  background:#f5f5f0;
   color:#000;
   font-weight:bold;
   cursor:pointer;
-  width:50%;      /* plus petit */
-  margin:auto;    /* centré */
+  width:50%;
+  margin:auto;
   display:block;
   padding:12px;
   font-size:16px;
@@ -88,11 +88,10 @@ li {
   font-weight:500;
 }
 
-/* couleurs contextuelles */
-.good { background:#1b5e20; }   /* mot du jour → vert foncé */
-.near { background: linear-gradient(90deg, #3fae7f, #3f83ae); color:#fff; }   /* proche → dégradé vert→bleu */
-.medium { background:#f9a825; } /* moyen → jaune */
-.bad { background:#8e0000; }    /* loin → rouge */
+.good { background:#1b5e20; }
+.near { background: linear-gradient(90deg, #3fae7f, #3f83ae); color:#fff; }
+.medium { background:#f9a825; }
+.bad { background:#8e0000; }
 
 .score {
   opacity:.9;
@@ -117,19 +116,11 @@ li {
   </button>
 </div>
 
+<script src="mots.js"></script>
 <script>
-// ---------------- DONNÉES ----------------
-const semanticGroups = {
-  emotions: ["amour","haine","joie","tristesse","peur","colère"],
-  nature: ["arbre","forêt","pluie","soleil","vent","mer"],
-  human: ["homme","femme","enfant","personne","gens"],
-  city: ["ville","route","immeuble","voiture","bruit"],
-  mind: ["pensée","idée","esprit","cerveau","mémoire"]
-};
-
 // ---------------- MOT DU JOUR ----------------
 const today = new Date().toISOString().slice(0,10);
-const secretWords = Object.values(semanticGroups).flat();
+const secretWords = mots;
 const secret = secretWords[
   today.split("-").join("") % secretWords.length
 ];
@@ -143,35 +134,16 @@ let played = localStorage.getItem(PLAYED_KEY) === "true";
 let found = guesses.some(g => g.rank === 1);
 
 // ---------------- LOGIQUE ----------------
-function getGroup(word) {
-  for (let g in semanticGroups) {
-    if (semanticGroups[g].includes(word)) return g;
-  }
-  return null;
-}
-
 function similarityRank(word) {
   if (word === secret) return 1;
-
-  const g1 = getGroup(word);
-  const g2 = getGroup(secret);
-
-  if (!g1 || !g2) {
-    return 1001 + Math.floor(Math.random() * 1500);
-  }
-
-  if (g1 === g2) {
-    return 2 + Math.floor(Math.random() * 498);
-  }
-
-  return 500 + Math.floor(Math.random() * 500);
+  return 2 + Math.floor(Math.random() * 1000);
 }
 
 function colorClass(rank) {
-  if (rank === 1) return "good";       // mot du jour → vert foncé
-  if (rank >= 2 && rank <= 500) return "near"; // proche → dégradé vert→bleu
-  if (rank <= 1000) return "medium";   // moyen → jaune
-  return "bad";                        // loin → rouge
+  if (rank === 1) return "good";
+  if (rank >= 2 && rank <= 500) return "near";
+  if (rank <= 1000) return "medium";
+  return "bad";
 }
 
 // ---------------- INTERACTIONS ----------------
@@ -192,6 +164,10 @@ button.onclick = () => {
 
   const word = input.value.toLowerCase().trim();
   if (!word) return;
+  if (!secretWords.includes(word)) {
+    alert("Mot non valide !");
+    return;
+  }
   if (guesses.some(g => g.word === word)) return;
 
   const rank = similarityRank(word);
