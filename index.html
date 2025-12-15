@@ -55,7 +55,7 @@ button:disabled {
 .message {
   text-align:center;
   font-size:14px;
-  opacity:.8;
+  opacity:.85;
 }
 
 ul {
@@ -77,13 +77,13 @@ li {
   font-weight:500;
 }
 
-/* couleurs */
-.good { background:#1b5e20; }
-.medium { background:#ef6c00; }
-.bad { background:#8e0000; }
+/* couleurs Contexto-like */
+.good { background:#1b5e20; }   /* très proche */
+.medium { background:#ef6c00; } /* moyen */
+.bad { background:#8e0000; }    /* loin */
 
 .rank {
-  opacity:.8;
+  opacity:.85;
   font-size:14px;
 }
 </style>
@@ -111,7 +111,7 @@ const semanticGroups = {
   mind: ["pensée","idée","esprit","cerveau","mémoire"]
 };
 
-// ---------------- MOT DU JOUR ----------------
+// ---------------- MOT DU JOUR (GLOBAL) ----------------
 const today = new Date().toISOString().slice(0,10);
 const secretWords = Object.values(semanticGroups).flat();
 const secret = secretWords[
@@ -124,9 +124,9 @@ const PLAYED_KEY = "contexto_fr_played_" + today;
 
 let guesses = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 let played = localStorage.getItem(PLAYED_KEY) === "true";
-let found = guesses.some(g => g.score === 1000);
+let found = guesses.some(g => g.rank === 1);
 
-// ---------------- LOGIQUE ----------------
+// ---------------- LOGIQUE SEMANTIQUE ----------------
 function getGroup(word) {
   for (let g in semanticGroups) {
     if (semanticGroups[g].includes(word)) return g;
@@ -134,20 +134,27 @@ function getGroup(word) {
   return null;
 }
 
-function similarity(word) {
-  if (word === secret) return 1000;
+// Rang Contexto-like : 1 = mot mystère
+function similarityRank(word) {
+  if (word === secret) return 1;
 
   const g1 = getGroup(word);
   const g2 = getGroup(secret);
 
-  if (!g1 || !g2) return Math.floor(Math.random()*200)+1;
-  if (g1 === g2) return Math.floor(Math.random()*200)+700;
-  return Math.floor(Math.random()*300)+300;
+  if (!g1 || !g2) {
+    return 2000 + Math.floor(Math.random() * 1000); // très loin
+  }
+
+  if (g1 === g2) {
+    return 2 + Math.floor(Math.random() * 80); // très proche
+  }
+
+  return 200 + Math.floor(Math.random() * 800); // intermédiaire
 }
 
-function colorClass(score) {
-  if (score >= 800) return "good";
-  if (score >= 500) return "medium";
+function colorClass(rank) {
+  if (rank <= 50) return "good";
+  if (rank <= 300) return "medium";
   return "bad";
 }
 
@@ -159,7 +166,8 @@ const info = document.getElementById("info");
 if (played && !found) {
   input.disabled = true;
   button.disabled = true;
-  info.textContent = "😎 Tu as déjà joué aujourd’hui. Partage à tes amis et reviens demain !";
+  info.textContent =
+    "😎 Tu as déjà joué aujourd’hui. Partage à tes amis et reviens demain !";
 }
 
 button.onclick = () => {
@@ -169,15 +177,15 @@ button.onclick = () => {
   if (!word) return;
   if (guesses.some(g => g.word === word)) return;
 
-  const score = similarity(word);
-  guesses.push({ word, score });
-  guesses.sort((a,b)=>b.score-a.score);
+  const rank = similarityRank(word);
+  guesses.push({ word, rank });
+  guesses.sort((a,b) => a.rank - b.rank);
 
-  if (score === 1000) {
+  if (rank === 1) {
     found = true;
     played = true;
     localStorage.setItem(PLAYED_KEY, "true");
-    info.textContent = "🎉 Bravo ! Mot du jour trouvé.";
+    info.textContent = "🎉 Bravo ! Tu as trouvé le mot du jour.";
     input.disabled = true;
     button.disabled = true;
   }
@@ -192,12 +200,12 @@ function render() {
   const ul = document.getElementById("results");
   ul.innerHTML = "";
 
-  guesses.forEach((g,i)=>{
+  guesses.forEach((g, i) => {
     const li = document.createElement("li");
-    li.className = colorClass(g.score);
+    li.className = colorClass(g.rank);
     li.innerHTML = `
       <span>${g.word}</span>
-      <span class="rank">#${i+1} • ${g.score}</span>
+      <span class="rank">#${i+1} • ${g.rank}</span>
     `;
     ul.appendChild(li);
   });
