@@ -27,17 +27,16 @@ h1 {
   margin-bottom:4px;
 }
 
-input, button {
-  width:100%;
+input {
+  background:#1e1e1e;
+  color:#fff;
+  width:80%;       /* largeur réduite */
+  margin:auto;     /* centré */
+  display:block;
   padding:14px;
   font-size:16px;
   border-radius:10px;
   border:none;
-}
-
-input {
-  background:#1e1e1e;
-  color:#fff;
 }
 
 button {
@@ -45,6 +44,13 @@ button {
   color:#000;
   font-weight:bold;
   cursor:pointer;
+  width:50%;      /* plus petit */
+  margin:auto;    /* centré */
+  display:block;
+  padding:12px;
+  font-size:16px;
+  border-radius:10px;
+  border:none;
 }
 
 button.secondary {
@@ -210,7 +216,7 @@ button.onclick = () => {
 // ---------------- PARTAGE ----------------
 shareBtn.onclick = () => {
   const tries = guesses.length;
-  const text = `🎉 J’ai trouvé le mot mystère du jour en ${tries} essais, à toi maintenant !`;
+  const text = `🎉 J’ai trouvé le mot mystère du jour en ${tries} essais, à toi maintenant ! 👉 https://nbzj4bq9sc-ship-it.github.io/Contexto/`;
 
   if (navigator.share) {
     navigator.share({ text });
