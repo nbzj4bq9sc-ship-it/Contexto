@@ -47,6 +47,11 @@ button {
   cursor:pointer;
 }
 
+button.secondary {
+  background:#1e88e5;
+  color:#fff;
+}
+
 button:disabled {
   opacity:.5;
   cursor:not-allowed;
@@ -77,13 +82,13 @@ li {
   font-weight:500;
 }
 
-/* couleurs Contexto-like */
-.good { background:#1b5e20; }   /* très proche */
-.medium { background:#ef6c00; } /* moyen */
-.bad { background:#8e0000; }    /* loin */
+/* nouvelles couleurs */
+.good { background:#1e7f6d; }   /* bleu/vert */
+.medium { background:#f9a825; } /* jaune */
+.bad { background:#8e0000; }    /* rouge */
 
-.rank {
-  opacity:.85;
+.score {
+  opacity:.9;
   font-size:14px;
 }
 </style>
@@ -99,6 +104,10 @@ li {
   <div id="info" class="message"></div>
 
   <ul id="results"></ul>
+
+  <button id="share" class="secondary" style="display:none;">
+    🎉 Partager mon résultat
+  </button>
 </div>
 
 <script>
@@ -111,7 +120,7 @@ const semanticGroups = {
   mind: ["pensée","idée","esprit","cerveau","mémoire"]
 };
 
-// ---------------- MOT DU JOUR (GLOBAL) ----------------
+// ---------------- MOT DU JOUR ----------------
 const today = new Date().toISOString().slice(0,10);
 const secretWords = Object.values(semanticGroups).flat();
 const secret = secretWords[
@@ -126,7 +135,7 @@ let guesses = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 let played = localStorage.getItem(PLAYED_KEY) === "true";
 let found = guesses.some(g => g.rank === 1);
 
-// ---------------- LOGIQUE SEMANTIQUE ----------------
+// ---------------- LOGIQUE ----------------
 function getGroup(word) {
   for (let g in semanticGroups) {
     if (semanticGroups[g].includes(word)) return g;
@@ -134,7 +143,6 @@ function getGroup(word) {
   return null;
 }
 
-// Rang Contexto-like : 1 = mot mystère
 function similarityRank(word) {
   if (word === secret) return 1;
 
@@ -142,19 +150,19 @@ function similarityRank(word) {
   const g2 = getGroup(secret);
 
   if (!g1 || !g2) {
-    return 2000 + Math.floor(Math.random() * 1000); // très loin
+    return 1001 + Math.floor(Math.random() * 1500);
   }
 
   if (g1 === g2) {
-    return 2 + Math.floor(Math.random() * 80); // très proche
+    return 2 + Math.floor(Math.random() * 498);
   }
 
-  return 200 + Math.floor(Math.random() * 800); // intermédiaire
+  return 500 + Math.floor(Math.random() * 500);
 }
 
 function colorClass(rank) {
-  if (rank <= 50) return "good";
-  if (rank <= 300) return "medium";
+  if (rank >= 2 && rank <= 500) return "good";
+  if (rank <= 1000) return "medium";
   return "bad";
 }
 
@@ -162,6 +170,7 @@ function colorClass(rank) {
 const input = document.getElementById("guess");
 const button = document.getElementById("submit");
 const info = document.getElementById("info");
+const shareBtn = document.getElementById("share");
 
 if (played && !found) {
   input.disabled = true;
@@ -188,6 +197,7 @@ button.onclick = () => {
     info.textContent = "🎉 Bravo ! Tu as trouvé le mot du jour.";
     input.disabled = true;
     button.disabled = true;
+    shareBtn.style.display = "block";
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(guesses));
@@ -195,17 +205,30 @@ button.onclick = () => {
   render();
 };
 
+// ---------------- PARTAGE ----------------
+shareBtn.onclick = () => {
+  const tries = guesses.length;
+  const text = `🎉 J’ai trouvé le mot mystère du jour en ${tries} essais, à toi maintenant !`;
+
+  if (navigator.share) {
+    navigator.share({ text });
+  } else {
+    navigator.clipboard.writeText(text);
+    alert("Résultat copié dans le presse-papiers 📋");
+  }
+};
+
 // ---------------- RENDER ----------------
 function render() {
   const ul = document.getElementById("results");
   ul.innerHTML = "";
 
-  guesses.forEach((g, i) => {
+  guesses.forEach(g => {
     const li = document.createElement("li");
     li.className = colorClass(g.rank);
     li.innerHTML = `
       <span>${g.word}</span>
-      <span class="rank">#${i+1} • ${g.rank}</span>
+      <span class="score">${g.rank}</span>
     `;
     ul.appendChild(li);
   });
