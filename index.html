@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr"> 
+<html lang="fr">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,19 +17,22 @@ body {
 .app {
   max-width:480px;
   margin:auto;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
 }
 
 h1 {
   text-align:center;
+  margin-bottom:4px;
 }
 
 input, button {
   width:100%;
-  padding:12px;
+  padding:14px;
   font-size:16px;
-  border-radius:8px;
+  border-radius:10px;
   border:none;
-  margin-top:8px;
 }
 
 input {
@@ -44,22 +47,44 @@ button {
   cursor:pointer;
 }
 
+button:disabled {
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+.message {
+  text-align:center;
+  font-size:14px;
+  opacity:.8;
+}
+
 ul {
   list-style:none;
   padding:0;
-  margin-top:16px;
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
 }
 
 li {
   background:#1e1e1e;
-  padding:10px;
-  border-radius:6px;
-  margin-bottom:8px;
+  padding:12px;
+  border-radius:8px;
   display:flex;
   justify-content:space-between;
+  align-items:center;
+  font-weight:500;
 }
+
+/* couleurs */
+.good { background:#1b5e20; }
+.medium { background:#ef6c00; }
+.bad { background:#8e0000; }
+
 .rank {
-  opacity:.7;
+  opacity:.8;
+  font-size:14px;
 }
 </style>
 </head>
@@ -69,13 +94,15 @@ li {
   <h1>Contexto 🇫🇷</h1>
 
   <input id="guess" placeholder="Entrez un mot…" />
-  <button onclick="submitGuess()">Valider</button>
+  <button id="submit">Valider</button>
+
+  <div id="info" class="message"></div>
 
   <ul id="results"></ul>
 </div>
 
 <script>
-// --- Base sémantique simplifiée ---
+// ---------------- DONNÉES ----------------
 const semanticGroups = {
   emotions: ["amour","haine","joie","tristesse","peur","colère"],
   nature: ["arbre","forêt","pluie","soleil","vent","mer"],
@@ -84,18 +111,25 @@ const semanticGroups = {
   mind: ["pensée","idée","esprit","cerveau","mémoire"]
 };
 
-// Mot du jour (stable)
+// ---------------- MOT DU JOUR ----------------
 const today = new Date().toISOString().slice(0,10);
 const secretWords = Object.values(semanticGroups).flat();
-const secret = secretWords[today.split("-").join("") % secretWords.length];
+const secret = secretWords[
+  today.split("-").join("") % secretWords.length
+];
 
-let guesses = [];
+// ---------------- STORAGE ----------------
+const STORAGE_KEY = "contexto_fr_" + today;
+const PLAYED_KEY = "contexto_fr_played_" + today;
 
+let guesses = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+let played = localStorage.getItem(PLAYED_KEY) === "true";
+let found = guesses.some(g => g.score === 1000);
+
+// ---------------- LOGIQUE ----------------
 function getGroup(word) {
-  for (let group in semanticGroups) {
-    if (semanticGroups[group].includes(word)) {
-      return group;
-    }
+  for (let g in semanticGroups) {
+    if (semanticGroups[g].includes(word)) return g;
   }
   return null;
 }
@@ -106,31 +140,61 @@ function similarity(word) {
   const g1 = getGroup(word);
   const g2 = getGroup(secret);
 
-  if (!g1 || !g2) return Math.floor(Math.random() * 200) + 1;
-  if (g1 === g2) return Math.floor(Math.random() * 300) + 700;
-
-  return Math.floor(Math.random() * 400) + 200;
+  if (!g1 || !g2) return Math.floor(Math.random()*200)+1;
+  if (g1 === g2) return Math.floor(Math.random()*200)+700;
+  return Math.floor(Math.random()*300)+300;
 }
 
-function submitGuess() {
-  const input = document.getElementById("guess");
+function colorClass(score) {
+  if (score >= 800) return "good";
+  if (score >= 500) return "medium";
+  return "bad";
+}
+
+// ---------------- INTERACTIONS ----------------
+const input = document.getElementById("guess");
+const button = document.getElementById("submit");
+const info = document.getElementById("info");
+
+if (played && !found) {
+  input.disabled = true;
+  button.disabled = true;
+  info.textContent = "😎 Tu as déjà joué aujourd’hui. Partage à tes amis et reviens demain !";
+}
+
+button.onclick = () => {
+  if (played || found) return;
+
   const word = input.value.toLowerCase().trim();
   if (!word) return;
+  if (guesses.some(g => g.word === word)) return;
 
   const score = similarity(word);
   guesses.push({ word, score });
-  guesses.sort((a,b) => b.score - a.score);
+  guesses.sort((a,b)=>b.score-a.score);
 
-  render();
+  if (score === 1000) {
+    found = true;
+    played = true;
+    localStorage.setItem(PLAYED_KEY, "true");
+    info.textContent = "🎉 Bravo ! Mot du jour trouvé.";
+    input.disabled = true;
+    button.disabled = true;
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(guesses));
   input.value = "";
-}
+  render();
+};
 
+// ---------------- RENDER ----------------
 function render() {
   const ul = document.getElementById("results");
   ul.innerHTML = "";
 
-  guesses.forEach((g, i) => {
+  guesses.forEach((g,i)=>{
     const li = document.createElement("li");
+    li.className = colorClass(g.score);
     li.innerHTML = `
       <span>${g.word}</span>
       <span class="rank">#${i+1} • ${g.score}</span>
@@ -138,6 +202,8 @@ function render() {
     ul.appendChild(li);
   });
 }
+
+render();
 </script>
 </body>
 </html>
